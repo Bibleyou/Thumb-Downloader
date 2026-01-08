@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Search, Download, History, Trash2, Youtube, PlayCircle, Loader2, AlertCircle, Copy, CheckCircle2, ShieldCheck, Zap, ExternalLink } from 'lucide-react';
+import { Search, Download, History, Trash2, Youtube, PlayCircle, Loader2, AlertCircle, Copy, CheckCircle2, History as HistoryIcon, Trash2 as TrashIcon, ExternalLink } from 'lucide-react';
 import { extractYouTubeId, detectPlatform } from './utils/extractors';
 import { Platform, VideoMetadata, DownloadHistoryItem } from './types';
 import { GeminiService } from './services/geminiService';
@@ -15,9 +15,9 @@ const App: React.FC = () => {
   const [isApiReady, setIsApiReady] = useState(false);
 
   useEffect(() => {
-    // Forma segura de verificar a chave na Vercel usando Vite
-    const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : null;
-    if (apiKey && apiKey !== 'undefined') {
+    // Verifica se a API KEY está disponível (Vite define process.env via config)
+    const apiKey = process.env.API_KEY;
+    if (apiKey && apiKey !== 'undefined' && apiKey !== '') {
       setIsApiReady(true);
     }
     
@@ -104,7 +104,7 @@ const App: React.FC = () => {
         addToHistory(meta);
       } else if (platform === Platform.RUMBLE) {
         if (!isApiReady) {
-          throw new Error("Configuração incompleta: API_KEY necessária para Rumble nas configurações da Vercel.");
+          throw new Error("API_KEY do Gemini não configurada na Vercel. Necessário para Rumble.");
         }
         const gemini = new GeminiService();
         const meta = await gemini.fetchRumbleMetadata(cleanUrl);
@@ -121,13 +121,13 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12 selection:bg-emerald-500/30 min-h-screen">
+    <div className="max-w-5xl mx-auto px-4 py-12 min-h-screen">
       <div className="flex justify-center mb-8">
         <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] border backdrop-blur-md transition-all ${
           isApiReady ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
         }`}>
-          <div className={`w-2 h-2 rounded-full animate-pulse ${isApiReady ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-emerald-500'}`} />
-          {isApiReady ? 'Gemini AI Ativo' : 'Apenas YouTube (Sem API Key)'}
+          <div className={`w-2 h-2 rounded-full animate-pulse ${isApiReady ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-amber-500'}`} />
+          {isApiReady ? 'Gemini AI Ativo' : 'Somente YouTube (Sem API Key)'}
         </div>
       </div>
 
@@ -139,7 +139,7 @@ const App: React.FC = () => {
           <span className="text-emerald-500">PRO</span>
         </h1>
         <p className="text-slate-400 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
-          A ferramenta definitiva para criadores. Extraia miniaturas de qualquer vídeo em segundos.
+          Extraia miniaturas de qualquer vídeo em segundos.
         </p>
       </header>
 
@@ -152,7 +152,7 @@ const App: React.FC = () => {
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="Cole o link do vídeo aqui..."
+                placeholder="Link do vídeo aqui..."
                 className="w-full bg-transparent border-none rounded-2xl py-5 pl-14 pr-4 focus:ring-0 text-xl placeholder:text-slate-600 font-medium text-white"
               />
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-400 transition-colors" size={24} />
@@ -160,7 +160,7 @@ const App: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="h-16 px-10 rounded-2xl bg-white text-black font-black text-lg hover:bg-emerald-400 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 flex items-center gap-3"
+              className="h-16 px-10 rounded-2xl bg-white text-black font-black text-lg hover:bg-emerald-400 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3"
             >
               {loading ? <Loader2 className="animate-spin" size={24} /> : 'EXTRAIR'}
             </button>
@@ -168,7 +168,7 @@ const App: React.FC = () => {
         </div>
         
         {error && (
-          <div className="absolute -bottom-16 left-0 right-0 flex justify-center animate-in slide-in-from-top-2">
+          <div className="absolute -bottom-16 left-0 right-0 flex justify-center">
             <div className="flex items-center gap-2 text-red-400 bg-red-400/5 px-5 py-2.5 rounded-2xl border border-red-400/20 text-sm font-semibold backdrop-blur-sm">
               <AlertCircle size={16} />
               {error}
@@ -178,13 +178,13 @@ const App: React.FC = () => {
       </div>
 
       {result && (
-        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-24 animate-in fade-in slide-in-from-bottom-10 duration-1000">
+        <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-24 animate-in fade-in duration-700">
           <div className="lg:col-span-8 group">
-            <div className="relative rounded-[32px] overflow-hidden bg-slate-900 border border-white/5 shadow-[0_0_50px_-12px_rgba(0,0,0,0.5)]">
+            <div className="relative rounded-[32px] overflow-hidden bg-slate-900 border border-white/5 shadow-2xl">
               <img
                 src={result.thumbnails[0].url}
-                className="w-full aspect-video object-cover transition-transform duration-1000 group-hover:scale-105"
-                alt="Thumbnail Principal"
+                className="w-full aspect-video object-cover"
+                alt="Thumbnail"
                 onError={(e) => {
                    const target = e.target as HTMLImageElement;
                    if (result.platform === Platform.YOUTUBE && !target.src.includes('hqdefault')) {
@@ -192,57 +192,50 @@ const App: React.FC = () => {
                    }
                 }}
               />
-              <div className="absolute top-6 left-6 flex items-center gap-3">
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl backdrop-blur-xl border border-white/10 shadow-2xl ${
+              <div className="absolute top-6 left-6">
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl backdrop-blur-xl border border-white/10 ${
                   result.platform === Platform.YOUTUBE ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'
                 }`}>
                   {result.platform === Platform.YOUTUBE ? <Youtube size={18} /> : <PlayCircle size={18} />}
-                  <span className="font-black text-xs uppercase tracking-widest">{result.platform}</span>
+                  <span className="font-black text-xs uppercase">{result.platform}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="lg:col-span-4 flex flex-col gap-6">
-            <div className="glass-morphism p-8 rounded-[32px] border-white/5 flex flex-col justify-between h-full relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-white">
-                 {result.platform === Platform.YOUTUBE ? <Youtube size={120} /> : <PlayCircle size={120} />}
-               </div>
-               
-               <div className="relative">
-                  <h2 className="text-2xl font-black text-white mb-8 leading-tight line-clamp-3">{result.title}</h2>
+            <div className="glass-morphism p-8 rounded-[32px] flex flex-col justify-between h-full">
+               <div>
+                  <h2 className="text-2xl font-black text-white mb-8 leading-tight line-clamp-2">{result.title}</h2>
                   <div className="space-y-4">
                     {result.thumbnails.map((t, i) => (
                       <button
                         key={i}
-                        onClick={() => handleDownload(t.url, `thumbpro-${result.id}-${i}`)}
-                        className="w-full group bg-white/5 hover:bg-white/10 border border-white/5 hover:border-emerald-500/30 p-5 rounded-2xl flex items-center justify-between transition-all"
+                        onClick={() => handleDownload(t.url, `thumb-${result.id}-${i}`)}
+                        className="w-full group bg-white/5 hover:bg-white/10 border border-white/5 p-5 rounded-2xl flex items-center justify-between transition-all"
                       >
                         <div className="text-left">
-                          <p className="text-sm font-black text-slate-100 uppercase tracking-tighter">{t.label}</p>
-                          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">Alta Definição • JPG</p>
+                          <p className="text-sm font-black text-slate-100">{t.label}</p>
                         </div>
-                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover:bg-emerald-500 group-hover:text-black transition-all">
-                          <Download size={20} />
-                        </div>
+                        <Download size={20} className="text-emerald-400" />
                       </button>
                     ))}
                   </div>
                </div>
                
-               <div className="mt-10 flex gap-3 relative">
+               <div className="mt-10 flex gap-3">
                  <button 
                   onClick={() => handleCopy(result.originalUrl)}
-                  className="flex-1 py-4 rounded-2xl border border-white/10 text-slate-400 font-bold hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-xs uppercase tracking-widest"
+                  className="flex-1 py-4 rounded-2xl border border-white/10 text-slate-400 font-bold hover:text-white flex items-center justify-center gap-2 text-xs uppercase"
                  >
                   {copied ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                  {copied ? 'Copiado' : 'Link Original'}
+                  {copied ? 'Copiado' : 'Link'}
                  </button>
                  <a 
                   href={result.originalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-14 h-14 rounded-2xl border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+                  className="w-14 h-14 rounded-2xl border border-white/10 flex items-center justify-center text-slate-400 hover:text-white"
                  >
                    <ExternalLink size={20} />
                  </a>
@@ -255,51 +248,25 @@ const App: React.FC = () => {
       {history.length > 0 && (
         <section className="mt-20">
           <div className="flex items-center justify-between mb-10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                <History size={24} />
-              </div>
-              <h3 className="text-3xl font-black text-white tracking-tighter italic uppercase">Recentes</h3>
+            <div className="flex items-center gap-4 text-white">
+              <HistoryIcon size={24} className="text-emerald-400" />
+              <h3 className="text-3xl font-black italic uppercase">Recentes</h3>
             </div>
-            <button
-              onClick={handleClearHistory}
-              className="group flex items-center gap-2 px-4 py-2 rounded-xl text-slate-600 hover:text-red-500 transition-all font-bold text-xs uppercase tracking-widest"
-            >
-              <Trash2 size={16} className="group-hover:rotate-12 transition-transform" />
-              Limpar
+            <button onClick={handleClearHistory} className="text-slate-600 hover:text-red-500 font-bold text-xs uppercase flex items-center gap-2">
+              <TrashIcon size={16} /> Limpar
             </button>
           </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
             {history.map((h, i) => (
-              <div
-                key={i}
-                onClick={() => { setUrl(h.metadata.originalUrl); window.scrollTo({top: 0, behavior: 'smooth'}); }}
-                className="group cursor-pointer space-y-3"
-              >
-                <div className="aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-white/5 group-hover:border-emerald-500/50 transition-all shadow-xl">
-                  <img 
-                    src={h.metadata.thumbnails[0].url} 
-                    className="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500" 
-                    alt="Histórico"
-                  />
-                </div>
-                <div className="px-1">
-                  <p className="text-[11px] font-black text-slate-500 truncate group-hover:text-emerald-400 transition-colors uppercase tracking-tight">
-                    {h.metadata.title}
-                  </p>
+              <div key={i} onClick={() => setUrl(h.metadata.originalUrl)} className="cursor-pointer group">
+                <div className="aspect-video rounded-2xl overflow-hidden bg-slate-900 border border-white/5 group-hover:border-emerald-500/50 transition-all">
+                  <img src={h.metadata.thumbnails[0].url} className="w-full h-full object-cover opacity-60 group-hover:opacity-100" alt="History" />
                 </div>
               </div>
             ))}
           </div>
         </section>
       )}
-
-      <footer className="mt-40 py-12 border-t border-white/5 text-center">
-        <p className="text-slate-700 text-[10px] uppercase tracking-[0.4em] font-black">
-          Thumbnail Downloader Pro • AI Engine Gemini 3.0 • Vercel Edge Performance
-        </p>
-      </footer>
     </div>
   );
 };
