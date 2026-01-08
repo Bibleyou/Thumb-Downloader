@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { VideoMetadata, Platform, ThumbnailInfo } from "../types";
 
@@ -6,8 +5,13 @@ export class GeminiService {
   private ai: any;
 
   constructor() {
-    const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : '';
-    this.ai = new GoogleGenAI({ apiKey: apiKey || '' });
+    let apiKey = "";
+    try {
+      apiKey = typeof process !== 'undefined' ? (process.env.API_KEY || "") : "";
+    } catch (e) {
+      console.error("Erro ao acessar API_KEY.");
+    }
+    this.ai = new GoogleGenAI({ apiKey });
   }
 
   async fetchRumbleMetadata(url: string): Promise<VideoMetadata> {
@@ -40,7 +44,7 @@ export class GeminiService {
       };
     } catch (error) {
       console.error("Erro Gemini:", error);
-      throw new Error("A IA não conseguiu extrair os dados deste link do Rumble. Verifique se a API_KEY está correta na Vercel.");
+      throw new Error("Não foi possível extrair dados do Rumble. Verifique se a API_KEY foi adicionada corretamente na Vercel.");
     }
   }
 }

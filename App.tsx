@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Search, Download, History, Trash2, Youtube, PlayCircle, Loader2, AlertCircle, Copy, CheckCircle2, History as HistoryIcon, Trash2 as TrashIcon, ExternalLink } from 'lucide-react';
+import { Search, Download, History, Youtube, PlayCircle, Loader2, AlertCircle, Copy, CheckCircle2, History as HistoryIcon, Trash2 as TrashIcon, ExternalLink } from 'lucide-react';
 import { extractYouTubeId, detectPlatform } from './utils/extractors';
 import { Platform, VideoMetadata, DownloadHistoryItem } from './types';
 import { GeminiService } from './services/geminiService';
@@ -15,11 +14,19 @@ const App: React.FC = () => {
   const [isApiReady, setIsApiReady] = useState(false);
 
   useEffect(() => {
-    // Verifica se a API KEY está disponível (Vite define process.env via config)
-    const apiKey = process.env.API_KEY;
-    if (apiKey && apiKey !== 'undefined' && apiKey !== '') {
-      setIsApiReady(true);
-    }
+    // Verificação segura de API_KEY para evitar erros de runtime
+    const checkApiKey = () => {
+      try {
+        const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : null;
+        if (apiKey && apiKey !== 'undefined' && apiKey !== '') {
+          setIsApiReady(true);
+        }
+      } catch (e) {
+        console.warn("Ambiente de variáveis não carregado totalmente.");
+      }
+    };
+
+    checkApiKey();
     
     const savedHistory = localStorage.getItem('thumb_history');
     if (savedHistory) {
@@ -104,7 +111,7 @@ const App: React.FC = () => {
         addToHistory(meta);
       } else if (platform === Platform.RUMBLE) {
         if (!isApiReady) {
-          throw new Error("API_KEY do Gemini não configurada na Vercel. Necessário para Rumble.");
+          throw new Error("API_KEY do Gemini não detectada. Adicione a variável API_KEY nas configurações da Vercel.");
         }
         const gemini = new GeminiService();
         const meta = await gemini.fetchRumbleMetadata(cleanUrl);
