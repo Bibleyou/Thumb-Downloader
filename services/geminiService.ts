@@ -6,8 +6,8 @@ export class GeminiService {
   private ai: any;
 
   constructor() {
-    // Instanciação seguindo a regra de usar process.env.API_KEY
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+    const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : '';
+    this.ai = new GoogleGenAI({ apiKey: apiKey || '' });
   }
 
   async fetchRumbleMetadata(url: string): Promise<VideoMetadata> {
@@ -40,7 +40,7 @@ export class GeminiService {
       };
     } catch (error) {
       console.error("Erro Gemini:", error);
-      throw new Error("A IA não conseguiu extrair os dados deste link do Rumble. Verifique se o link está correto.");
+      throw new Error("A IA não conseguiu extrair os dados deste link do Rumble. Verifique se a API_KEY está correta na Vercel.");
     }
   }
 }

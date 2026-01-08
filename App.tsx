@@ -15,8 +15,9 @@ const App: React.FC = () => {
   const [isApiReady, setIsApiReady] = useState(false);
 
   useEffect(() => {
-    // Na Vercel, verificamos se a variável de ambiente foi injetada
-    if (process.env.API_KEY && process.env.API_KEY !== 'undefined') {
+    // Forma segura de verificar a chave na Vercel usando Vite
+    const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : null;
+    if (apiKey && apiKey !== 'undefined') {
       setIsApiReady(true);
     }
     
@@ -103,7 +104,7 @@ const App: React.FC = () => {
         addToHistory(meta);
       } else if (platform === Platform.RUMBLE) {
         if (!isApiReady) {
-          throw new Error("Configuração incompleta: API_KEY necessária para Rumble.");
+          throw new Error("Configuração incompleta: API_KEY necessária para Rumble nas configurações da Vercel.");
         }
         const gemini = new GeminiService();
         const meta = await gemini.fetchRumbleMetadata(cleanUrl);
@@ -120,13 +121,12 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12 selection:bg-emerald-500/30">
-      {/* Badge de Status da API */}
+    <div className="max-w-5xl mx-auto px-4 py-12 selection:bg-emerald-500/30 min-h-screen">
       <div className="flex justify-center mb-8">
         <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.15em] border backdrop-blur-md transition-all ${
           isApiReady ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
         }`}>
-          <div className={`w-2 h-2 rounded-full animate-pulse ${isApiReady ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-amber-500'}`} />
+          <div className={`w-2 h-2 rounded-full animate-pulse ${isApiReady ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]' : 'bg-emerald-500'}`} />
           {isApiReady ? 'Gemini AI Ativo' : 'Apenas YouTube (Sem API Key)'}
         </div>
       </div>
@@ -143,7 +143,6 @@ const App: React.FC = () => {
         </p>
       </header>
 
-      {/* Input de Busca Principal */}
       <div className="relative max-w-3xl mx-auto mb-20 group">
         <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-[28px] blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
         <div className="relative glass-morphism p-2 rounded-[26px] shadow-2xl">
@@ -154,7 +153,7 @@ const App: React.FC = () => {
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="Cole o link do vídeo aqui..."
-                className="w-full bg-transparent border-none rounded-2xl py-5 pl-14 pr-4 focus:ring-0 text-xl placeholder:text-slate-600 font-medium"
+                className="w-full bg-transparent border-none rounded-2xl py-5 pl-14 pr-4 focus:ring-0 text-xl placeholder:text-slate-600 font-medium text-white"
               />
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-400 transition-colors" size={24} />
             </div>
@@ -178,7 +177,6 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* Resultados da Busca */}
       {result && (
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-24 animate-in fade-in slide-in-from-bottom-10 duration-1000">
           <div className="lg:col-span-8 group">
@@ -189,7 +187,6 @@ const App: React.FC = () => {
                 alt="Thumbnail Principal"
                 onError={(e) => {
                    const target = e.target as HTMLImageElement;
-                   // Se a maxresdefault falhar, tenta a hqdefault automaticamente
                    if (result.platform === Platform.YOUTUBE && !target.src.includes('hqdefault')) {
                      target.src = result.thumbnails[1].url;
                    }
@@ -208,7 +205,7 @@ const App: React.FC = () => {
 
           <div className="lg:col-span-4 flex flex-col gap-6">
             <div className="glass-morphism p-8 rounded-[32px] border-white/5 flex flex-col justify-between h-full relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+               <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-white">
                  {result.platform === Platform.YOUTUBE ? <Youtube size={120} /> : <PlayCircle size={120} />}
                </div>
                
@@ -244,6 +241,7 @@ const App: React.FC = () => {
                  <a 
                   href={result.originalUrl}
                   target="_blank"
+                  rel="noopener noreferrer"
                   className="w-14 h-14 rounded-2xl border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all"
                  >
                    <ExternalLink size={20} />
@@ -254,7 +252,6 @@ const App: React.FC = () => {
         </section>
       )}
 
-      {/* Histórico Recente */}
       {history.length > 0 && (
         <section className="mt-20">
           <div className="flex items-center justify-between mb-10">
@@ -299,11 +296,6 @@ const App: React.FC = () => {
       )}
 
       <footer className="mt-40 py-12 border-t border-white/5 text-center">
-        <div className="flex justify-center items-center gap-6 mb-8 opacity-20 hover:opacity-100 transition-opacity grayscale hover:grayscale-0 duration-500">
-           <Youtube size={32} />
-           <div className="w-px h-8 bg-white/20" />
-           <PlayCircle size={32} />
-        </div>
         <p className="text-slate-700 text-[10px] uppercase tracking-[0.4em] font-black">
           Thumbnail Downloader Pro • AI Engine Gemini 3.0 • Vercel Edge Performance
         </p>
