@@ -9,7 +9,7 @@ export class GeminiService {
     try {
       apiKey = typeof process !== 'undefined' ? (process.env.API_KEY || "") : "";
     } catch (e) {
-      console.error("Erro ao acessar API_KEY.");
+      console.error("API_KEY Access Error.");
     }
     this.ai = new GoogleGenAI({ apiKey });
   }
@@ -18,9 +18,9 @@ export class GeminiService {
     try {
       const response = await this.ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Analise este link do Rumble: ${url}. 
-        Encontre o título do vídeo e a URL direta da imagem de capa (thumbnail) em maior resolução disponível.
-        Retorne APENAS um objeto JSON com: "title" e "thumbnailUrl".`,
+        contents: `Analyze this Rumble link: ${url}. 
+        Identify the video title and the direct URL of the highest resolution cover image (thumbnail).
+        Return ONLY a JSON object with keys: "title" and "thumbnailUrl".`,
         config: {
           tools: [{ googleSearch: {} }],
           responseMimeType: "application/json"
@@ -29,22 +29,22 @@ export class GeminiService {
 
       const data = JSON.parse(response.text.trim());
       
-      if (!data.thumbnailUrl) throw new Error("Thumbnail não encontrada.");
+      if (!data.thumbnailUrl) throw new Error("Thumbnail not found.");
 
       const thumbnails: ThumbnailInfo[] = [
-        { url: data.thumbnailUrl, label: 'Resolução Original (Rumble)' }
+        { url: data.thumbnailUrl, label: 'Original Resolution' }
       ];
 
       return {
         id: url.split('/').pop()?.split('-')[0] || 'rumble-vid',
-        title: data.title || 'Vídeo do Rumble',
+        title: data.title || 'Rumble Video',
         platform: Platform.RUMBLE,
         originalUrl: url,
         thumbnails
       };
     } catch (error) {
-      console.error("Erro Gemini:", error);
-      throw new Error("Não foi possível extrair dados do Rumble. Verifique se a API_KEY foi adicionada corretamente na Vercel.");
+      console.error("Gemini Error:", error);
+      throw new Error("Unable to extract Rumble metadata. Please ensure API_KEY is set.");
     }
   }
 }

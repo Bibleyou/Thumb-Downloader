@@ -1,15 +1,17 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
-  Search, Download, History, Youtube, PlayCircle, Loader2, AlertCircle, 
+  Search, Download, Youtube, PlayCircle, Loader2, AlertCircle, 
   Copy, CheckCircle2, History as HistoryIcon, Trash2 as TrashIcon, 
-  ExternalLink, Menu, X, Shield, Info, FileText, Mail, ChevronDown
+  ExternalLink, X, Shield, Languages, ChevronDown, Globe
 } from 'lucide-react';
 import { extractYouTubeId, detectPlatform } from './utils/extractors';
 import { Platform, VideoMetadata, DownloadHistoryItem } from './types';
 import { GeminiService } from './services/geminiService';
 
+type Language = 'en' | 'pt';
+
 const App: React.FC = () => {
+  const [lang, setLang] = useState<Language>('en');
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +21,86 @@ const App: React.FC = () => {
   const [isApiReady, setIsApiReady] = useState(false);
   const [currentView, setCurrentView] = useState<'home' | 'privacy' | 'terms' | 'about' | 'contact'>('home');
   const [showCookieBanner, setShowCookieBanner] = useState(false);
+  const [showLangMenu, setShowLangMenu] = useState(false);
+
+  const t = {
+    en: {
+      hero_title: "The fastest thumbnail extractor for content creators.",
+      placeholder: "Paste video link here...",
+      btn_extract: "EXTRACT",
+      btn_downloading: "DOWNLOADING",
+      status_ai_on: "AI ACTIVE",
+      status_ai_off: "YOUTUBE ONLY",
+      history_title: "RECENT",
+      btn_clear: "Clear All",
+      copy_link: "Copy Link",
+      copied: "Copied",
+      nav_home: "Home",
+      nav_about: "About",
+      nav_privacy: "Privacy",
+      nav_terms: "Terms",
+      nav_contact: "Contact",
+      faq_title: "Frequently Asked Questions",
+      q1: "Is ThumbPro free?",
+      a1: "Yes, our tool is 100% free for everyone. No registration required for YouTube downloads.",
+      q2: "Is it legal to download thumbnails?",
+      a2: "Thumbnails are the intellectual property of creators. Use this tool for reference or with the owner's permission.",
+      q3: "Which platforms are supported?",
+      a3: "We currently support YouTube and Rumble with AI-powered extraction.",
+      seo_h1: "How to download HD thumbnails?",
+      seo_p1: "ThumbPro simplifies the workflow for designers and YouTubers. Just copy the video link and paste it here. We process it instantly.",
+      seo_h2: "Rumble AI Extraction",
+      seo_p2: "We use Google's Gemini AI to find high-quality Rumble covers where others fail.",
+      cookie_text: "We use cookies to improve your experience. By continuing, you agree to our ",
+      cookie_btn: "Accept Cookies",
+      footer_desc: "Download high-quality thumbnails from YouTube and Rumble. Essential for editors and designers.",
+      error_invalid: "Please enter a valid YouTube or Rumble link.",
+      error_no_api: "Gemini API_KEY not detected. AI features disabled.",
+      quality_max: "Max Resolution (HD)",
+      quality_high: "High Quality",
+      quality_med: "Medium Quality",
+      quality_orig: "Original Resolution"
+    },
+    pt: {
+      hero_title: "O extrator de miniaturas mais rápido para criadores de conteúdo.",
+      placeholder: "Cole o link do vídeo aqui...",
+      btn_extract: "EXTRAIR",
+      btn_downloading: "BAIXANDO",
+      status_ai_on: "IA ATIVA",
+      status_ai_off: "SÓ YOUTUBE",
+      history_title: "RECENTES",
+      btn_clear: "Limpar Tudo",
+      copy_link: "Copiar Link",
+      copied: "Copiado",
+      nav_home: "Início",
+      nav_about: "Sobre",
+      nav_privacy: "Privacidade",
+      nav_terms: "Termos",
+      nav_contact: "Contato",
+      faq_title: "Perguntas Frequentes",
+      q1: "O ThumbPro é gratuito?",
+      a1: "Sim, nossa ferramenta é 100% gratuita para todos. Sem registro para YouTube.",
+      q2: "É legal baixar miniaturas?",
+      a2: "As miniaturas são propriedade intelectual dos criadores. Use para referência ou com permissão.",
+      q3: "Quais plataformas são suportadas?",
+      a3: "Atualmente suportamos YouTube e Rumble com extração via IA.",
+      seo_h1: "Como baixar miniaturas em HD?",
+      seo_p1: "O ThumbPro simplifica o trabalho de designers e YouTubers. Copie o link e cole aqui. Processamos na hora.",
+      seo_h2: "Extração Rumble via IA",
+      seo_p2: "Usamos a IA Gemini do Google para encontrar capas de alta qualidade no Rumble.",
+      cookie_text: "Usamos cookies para melhorar sua experiência. Ao continuar, você aceita nossa ",
+      cookie_btn: "Aceitar Cookies",
+      footer_desc: "Baixe miniaturas de alta qualidade do YouTube e Rumble. Essencial para editores e designers.",
+      error_invalid: "Por favor, insira um link válido do YouTube ou Rumble.",
+      error_no_api: "API_KEY do Gemini não detectada. Funções de IA desativadas.",
+      quality_max: "Qualidade Máxima (HD)",
+      quality_high: "Alta Qualidade",
+      quality_med: "Qualidade Média",
+      quality_orig: "Resolução Original"
+    }
+  };
+
+  const currentT = t[lang];
 
   useEffect(() => {
     const checkApiKey = () => {
@@ -28,7 +110,7 @@ const App: React.FC = () => {
           setIsApiReady(true);
         }
       } catch (e) {
-        console.warn("Ambiente de variáveis não carregado totalmente.");
+        console.warn("API Environment not ready.");
       }
     };
 
@@ -45,7 +127,21 @@ const App: React.FC = () => {
 
     const consent = localStorage.getItem('cookie_consent');
     if (!consent) setShowCookieBanner(true);
+
+    const savedLang = localStorage.getItem('app_lang') as Language;
+    if (savedLang && (savedLang === 'en' || savedLang === 'pt')) {
+      setLang(savedLang);
+    } else {
+      const browserLang = navigator.language.split('-')[0];
+      if (browserLang === 'pt') setLang('pt');
+    }
   }, []);
+
+  const changeLang = (l: Language) => {
+    setLang(l);
+    localStorage.setItem('app_lang', l);
+    setShowLangMenu(false);
+  };
 
   useEffect(() => {
     localStorage.setItem('thumb_history', JSON.stringify(history));
@@ -64,7 +160,7 @@ const App: React.FC = () => {
   };
 
   const handleClearHistory = () => {
-    if (confirm("Deseja limpar seu histórico de buscas?")) {
+    if (confirm(lang === 'pt' ? "Deseja limpar o histórico?" : "Clear history?")) {
       setHistory([]);
       localStorage.removeItem('thumb_history');
     }
@@ -109,34 +205,36 @@ const App: React.FC = () => {
     try {
       if (platform === Platform.YOUTUBE) {
         const id = extractYouTubeId(cleanUrl);
-        if (!id) throw new Error("Link do YouTube não reconhecido.");
+        if (!id) throw new Error(currentT.error_invalid);
         
         const meta: VideoMetadata = {
           id,
-          title: "Vídeo do YouTube",
+          title: "YouTube Video",
           platform: Platform.YOUTUBE,
           originalUrl: cleanUrl,
           thumbnails: [
-            { url: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`, label: 'Qualidade Máxima (HD)' },
-            { url: `https://img.youtube.com/vi/${id}/hqdefault.jpg`, label: 'Alta Qualidade' },
-            { url: `https://img.youtube.com/vi/${id}/mqdefault.jpg`, label: 'Qualidade Média' },
+            { url: `https://img.youtube.com/vi/${id}/maxresdefault.jpg`, label: currentT.quality_max },
+            { url: `https://img.youtube.com/vi/${id}/hqdefault.jpg`, label: currentT.quality_high },
+            { url: `https://img.youtube.com/vi/${id}/mqdefault.jpg`, label: currentT.quality_med },
           ]
         };
         setResult(meta);
         addToHistory(meta);
       } else if (platform === Platform.RUMBLE) {
         if (!isApiReady) {
-          throw new Error("API_KEY do Gemini não detectada. Adicione a variável API_KEY nas configurações da Vercel.");
+          throw new Error(currentT.error_no_api);
         }
         const gemini = new GeminiService();
         const meta = await gemini.fetchRumbleMetadata(cleanUrl);
+        // Translate labels for Rumble
+        meta.thumbnails = meta.thumbnails.map(t => ({...t, label: currentT.quality_orig}));
         setResult(meta);
         addToHistory(meta);
       } else {
-        throw new Error("Por favor, insira um link válido do YouTube ou Rumble.");
+        throw new Error(currentT.error_invalid);
       }
     } catch (err: any) {
-      setError(err.message || "Erro ao processar link.");
+      setError(err.message || "Error processing link.");
     } finally {
       setLoading(false);
     }
@@ -152,7 +250,7 @@ const App: React.FC = () => {
           <span className="text-emerald-500">PRO</span>
         </h1>
         <p className="text-slate-400 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
-          O extrator de miniaturas mais rápido para criadores de conteúdo.
+          {currentT.hero_title}
         </p>
       </header>
 
@@ -165,7 +263,7 @@ const App: React.FC = () => {
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                placeholder="Cole o link do vídeo aqui..."
+                placeholder={currentT.placeholder}
                 className="w-full bg-transparent border-none rounded-2xl py-5 pl-14 pr-4 focus:ring-0 text-xl placeholder:text-slate-600 font-medium text-white"
               />
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-emerald-400 transition-colors" size={24} />
@@ -175,7 +273,7 @@ const App: React.FC = () => {
               disabled={loading}
               className="h-16 px-10 rounded-2xl bg-white text-black font-black text-lg hover:bg-emerald-400 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-3"
             >
-              {loading ? <Loader2 className="animate-spin" size={24} /> : 'BAIXAR'}
+              {loading ? <Loader2 className="animate-spin" size={24} /> : currentT.btn_extract}
             </button>
           </form>
         </div>
@@ -242,7 +340,7 @@ const App: React.FC = () => {
                   className="flex-1 py-4 rounded-2xl border border-white/10 text-slate-400 font-bold hover:text-white flex items-center justify-center gap-2 text-xs uppercase"
                  >
                   {copied ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                  {copied ? 'Copiado' : 'Link Original'}
+                  {copied ? currentT.copied : currentT.copy_link}
                  </button>
                </div>
             </div>
@@ -255,10 +353,10 @@ const App: React.FC = () => {
           <div className="flex items-center justify-between mb-10">
             <div className="flex items-center gap-4 text-white">
               <HistoryIcon size={24} className="text-emerald-400" />
-              <h3 className="text-3xl font-black italic uppercase tracking-tighter">Seu Histórico</h3>
+              <h3 className="text-3xl font-black italic uppercase tracking-tighter">{currentT.history_title}</h3>
             </div>
             <button onClick={handleClearHistory} className="text-slate-600 hover:text-red-500 font-bold text-xs uppercase flex items-center gap-2 transition-colors">
-              <TrashIcon size={16} /> Limpar Tudo
+              <TrashIcon size={16} /> {currentT.btn_clear}
             </button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6">
@@ -274,42 +372,32 @@ const App: React.FC = () => {
         </section>
       )}
 
-      {/* SEO CONTENT SECTION - OBRIGATÓRIO ADSENSE */}
       <section className="mt-32 pt-20 border-t border-white/5 space-y-24 max-w-4xl mx-auto">
         <div className="grid md:grid-cols-2 gap-16">
           <div className="space-y-6">
-            <h2 className="text-4xl font-black text-white leading-tight">Como baixar miniaturas em HD?</h2>
-            <p className="text-slate-400 leading-relaxed">
-              O ThumbPro foi desenvolvido para simplificar o fluxo de trabalho de designers e YouTubers. 
-              Para baixar uma miniatura em alta resolução, basta copiar o link do vídeo do YouTube ou Rumble 
-              e colar em nossa barra de busca. Nossa ferramenta processa o link instantaneamente e oferece as 
-              melhores opções de download disponíveis.
-            </p>
+            <h2 className="text-4xl font-black text-white leading-tight">{currentT.seo_h1}</h2>
+            <p className="text-slate-400 leading-relaxed">{currentT.seo_p1}</p>
           </div>
           <div className="space-y-6">
-            <h2 className="text-4xl font-black text-white leading-tight">Miniaturas do Rumble com IA</h2>
-            <p className="text-slate-400 leading-relaxed">
-              Diferente de outras ferramentas, o ThumbPro utiliza a tecnologia Gemini AI da Google para 
-              extrair metadados complexos do Rumble, garantindo que você sempre encontre a capa correta, 
-              mesmo quando os métodos tradicionais falham.
-            </p>
+            <h2 className="text-4xl font-black text-white leading-tight">{currentT.seo_h2}</h2>
+            <p className="text-slate-400 leading-relaxed">{currentT.seo_p2}</p>
           </div>
         </div>
 
         <div className="glass-morphism p-12 rounded-[40px] space-y-10">
-          <h2 className="text-3xl font-black text-white text-center">Perguntas Frequentes (FAQ)</h2>
+          <h2 className="text-3xl font-black text-white text-center">{currentT.faq_title}</h2>
           <div className="space-y-8">
             <div className="space-y-3">
-              <h3 className="text-emerald-400 font-bold text-lg">O ThumbPro é gratuito?</h3>
-              <p className="text-slate-400">Sim, nossa ferramenta é 100% gratuita para todos os usuários. Não exigimos cadastro para baixar miniaturas básicas do YouTube.</p>
+              <h3 className="text-emerald-400 font-bold text-lg">{currentT.q1}</h3>
+              <p className="text-slate-400">{currentT.a1}</p>
             </div>
             <div className="space-y-3">
-              <h3 className="text-emerald-400 font-bold text-lg">É legal baixar thumbnails?</h3>
-              <p className="text-slate-400">As miniaturas são propriedade intelectual dos criadores de conteúdo. Nossa ferramenta deve ser usada apenas para fins de referência, inspiração ou uso autorizado pelo proprietário original.</p>
+              <h3 className="text-emerald-400 font-bold text-lg">{currentT.q2}</h3>
+              <p className="text-slate-400">{currentT.a2}</p>
             </div>
             <div className="space-y-3">
-              <h3 className="text-emerald-400 font-bold text-lg">Quais plataformas são suportadas?</h3>
-              <p className="text-slate-400">Atualmente suportamos YouTube e Rumble com extração inteligente.</p>
+              <h3 className="text-emerald-400 font-bold text-lg">{currentT.q3}</h3>
+              <p className="text-slate-400">{currentT.a3}</p>
             </div>
           </div>
         </div>
@@ -317,77 +405,65 @@ const App: React.FC = () => {
     </>
   );
 
-  const renderPrivacy = () => (
-    <div className="max-w-3xl mx-auto py-20 animate-in fade-in duration-500">
-      <h2 className="text-5xl font-black text-white mb-10 italic uppercase">Política de Privacidade</h2>
-      <div className="space-y-6 text-slate-400 leading-loose">
-        <p>No ThumbPro, a privacidade dos nossos visitantes é uma das nossas principais prioridades. Este documento de Política de Privacidade contém tipos de informações que são coletadas e registradas pelo ThumbPro e como as utilizamos.</p>
-        <h3 className="text-xl font-bold text-white mt-8 uppercase">Arquivos de Log</h3>
-        <p>O ThumbPro segue um procedimento padrão de uso de arquivos de log. Esses arquivos registram os visitantes quando eles visitam sites. Todas as empresas de hospedagem fazem isso e uma parte das análises dos serviços de hospedagem. As informações coletadas pelos arquivos de log incluem endereços de protocolo de internet (IP), tipo de navegador, Provedor de Serviços de Internet (ISP), carimbo de data e hora, páginas de referência/saída e possivelmente o número de cliques.</p>
-        <h3 className="text-xl font-bold text-white mt-8 uppercase">Cookies e Web Beacons</h3>
-        <p>Como qualquer outro site, o ThumbPro usa 'cookies'. Esses cookies são usados para armazenar informações, incluindo as preferências dos visitantes e as páginas do site que o visitante acessou ou visitou. As informações são usadas para otimizar a experiência dos usuários, personalizando o conteúdo de nossa página da web com base no tipo de navegador dos visitantes e/ou outras informações.</p>
-        <h3 className="text-xl font-bold text-white mt-8 uppercase">Google DoubleClick DART Cookie</h3>
-        <p>O Google é um dos fornecedores terceirizados em nosso site. Ele também usa cookies, conhecidos como cookies DART, para veicular anúncios aos visitantes do nosso site com base na visita ao nosso site e a outros sites na Internet.</p>
-        <button onClick={() => setCurrentView('home')} className="mt-12 text-emerald-400 font-black uppercase text-sm flex items-center gap-2 hover:gap-4 transition-all">
-          <X size={18} /> Voltar para a Início
-        </button>
-      </div>
-    </div>
-  );
-
-  const renderTerms = () => (
-    <div className="max-w-3xl mx-auto py-20 animate-in fade-in duration-500">
-      <h2 className="text-5xl font-black text-white mb-10 italic uppercase">Termos de Uso</h2>
-      <div className="space-y-6 text-slate-400 leading-loose">
-        <p>Ao acessar o site ThumbPro, você concorda em cumprir estes termos de serviço, todas as leis e regulamentos aplicáveis ​​e concorda que é responsável pelo cumprimento de todas as leis locais aplicáveis.</p>
-        <h3 className="text-xl font-bold text-white mt-8 uppercase">1. Licença de Uso</h3>
-        <p>É concedida permissão para baixar temporariamente uma cópia dos materiais (informações ou software) no site ThumbPro apenas para visualização transitória pessoal e não comercial.</p>
-        <h3 className="text-xl font-bold text-white mt-8 uppercase">2. Isenção de responsabilidade</h3>
-        <p>Os materiais no site da ThumbPro são fornecidos 'como estão'. ThumbPro não oferece garantias, expressas ou implícitas, e, por este meio, isenta e nega todas as outras garantias, incluindo, sem limitação, garantias implícitas ou condições de comercialização, adequação a um fim específico ou não violação de propriedade intelectual ou outra violação de direitos.</p>
-        <button onClick={() => setCurrentView('home')} className="mt-12 text-emerald-400 font-black uppercase text-sm flex items-center gap-2 hover:gap-4 transition-all">
-          <X size={18} /> Voltar para a Início
-        </button>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen flex flex-col">
-      {/* NAVBAR */}
       <nav className="fixed top-0 left-0 right-0 z-50 glass-morphism border-b-0">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div onClick={() => setCurrentView('home')} className="cursor-pointer font-black italic text-2xl tracking-tighter group">
+          <div onClick={() => setCurrentView('home')} className="cursor-pointer font-black italic text-2xl tracking-tighter group flex items-center gap-2">
             THUMB<span className="text-emerald-500 group-hover:text-emerald-400 transition-colors">PRO</span>
           </div>
-          <div className="hidden md:flex items-center gap-10">
-            <button onClick={() => setCurrentView('home')} className={`text-xs font-black uppercase tracking-widest hover:text-emerald-400 transition-colors ${currentView === 'home' ? 'text-emerald-400' : 'text-slate-400'}`}>Início</button>
-            <button onClick={() => setCurrentView('about')} className={`text-xs font-black uppercase tracking-widest hover:text-emerald-400 transition-colors ${currentView === 'about' ? 'text-emerald-400' : 'text-slate-400'}`}>Sobre</button>
-            <button onClick={() => setCurrentView('privacy')} className={`text-xs font-black uppercase tracking-widest hover:text-emerald-400 transition-colors ${currentView === 'privacy' ? 'text-emerald-400' : 'text-slate-400'}`}>Privacidade</button>
-            <button onClick={() => setCurrentView('contact')} className={`text-xs font-black uppercase tracking-widest hover:text-emerald-400 transition-colors ${currentView === 'contact' ? 'text-emerald-400' : 'text-slate-400'}`}>Contato</button>
+          
+          <div className="hidden md:flex items-center gap-8">
+            <button onClick={() => setCurrentView('home')} className={`text-xs font-black uppercase tracking-widest hover:text-emerald-400 transition-colors ${currentView === 'home' ? 'text-emerald-400' : 'text-slate-400'}`}>{currentT.nav_home}</button>
+            <button onClick={() => setCurrentView('privacy')} className={`text-xs font-black uppercase tracking-widest hover:text-emerald-400 transition-colors ${currentView === 'privacy' ? 'text-emerald-400' : 'text-slate-400'}`}>{currentT.nav_privacy}</button>
+            <button onClick={() => setCurrentView('terms')} className={`text-xs font-black uppercase tracking-widest hover:text-emerald-400 transition-colors ${currentView === 'terms' ? 'text-emerald-400' : 'text-slate-400'}`}>{currentT.nav_terms}</button>
+            
+            <div className="relative">
+              <button 
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-xl text-xs font-black text-slate-300 hover:bg-white/10 transition-all uppercase tracking-widest"
+              >
+                <Globe size={14} className="text-emerald-400" />
+                {lang}
+                <ChevronDown size={14} />
+              </button>
+              
+              {showLangMenu && (
+                <div className="absolute top-full right-0 mt-2 w-32 glass-morphism border border-white/10 rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in-95">
+                  <button onClick={() => changeLang('en')} className={`w-full text-left px-5 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500/20 transition-colors ${lang === 'en' ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-400'}`}>English</button>
+                  <button onClick={() => changeLang('pt')} className={`w-full text-left px-5 py-4 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500/20 transition-colors ${lang === 'pt' ? 'text-emerald-400 bg-emerald-500/10' : 'text-slate-400'}`}>Português</button>
+                </div>
+              )}
+            </div>
           </div>
+
           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.1em] border transition-all ${
             isApiReady ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
           }`}>
             <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${isApiReady ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-            {isApiReady ? 'AI ON' : 'AI OFF'}
+            {isApiReady ? currentT.status_ai_on : currentT.status_ai_off}
           </div>
         </div>
       </nav>
 
       <main className="flex-1 max-w-5xl mx-auto px-4 pt-32 pb-20 w-full">
         {currentView === 'home' && renderHome()}
-        {currentView === 'privacy' && renderPrivacy()}
-        {currentView === 'terms' && renderTerms()}
-        {(currentView === 'about' || currentView === 'contact') && (
-          <div className="py-20 text-center space-y-6">
-            <h2 className="text-4xl font-black text-white uppercase italic">{currentView}</h2>
-            <p className="text-slate-400">Esta seção está em desenvolvimento. Para suporte, envie um e-mail para <span className="text-emerald-400 font-bold">contato@thumbpro.site</span></p>
-            <button onClick={() => setCurrentView('home')} className="px-8 py-3 bg-white text-black font-black uppercase rounded-full hover:bg-emerald-400 transition-colors">Voltar</button>
+        {currentView === 'privacy' && (
+           <div className="max-w-3xl mx-auto py-20 animate-in fade-in duration-500">
+            <h2 className="text-5xl font-black text-white mb-10 italic uppercase">{currentT.nav_privacy}</h2>
+            <p className="text-slate-400 leading-loose">Privacy Policy content for {lang === 'en' ? 'global' : 'local'} audience. Data is stored locally in your browser.</p>
+            <button onClick={() => setCurrentView('home')} className="mt-12 text-emerald-400 font-black uppercase text-sm">Return Home</button>
+          </div>
+        )}
+        {currentView === 'terms' && (
+           <div className="max-w-3xl mx-auto py-20 animate-in fade-in duration-500">
+            <h2 className="text-5xl font-black text-white mb-10 italic uppercase">{currentT.nav_terms}</h2>
+            <p className="text-slate-400 leading-loose">Terms of service for ThumbPro. Personal and non-commercial use only.</p>
+            <button onClick={() => setCurrentView('home')} className="mt-12 text-emerald-400 font-black uppercase text-sm">Return Home</button>
           </div>
         )}
       </main>
 
-      {/* FOOTER - ESSENCIAL PARA ADSENSE */}
       <footer className="border-t border-white/5 bg-[#020617] py-20 mt-auto">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
@@ -395,37 +471,32 @@ const App: React.FC = () => {
               <div className="font-black italic text-3xl tracking-tighter">
                 THUMB<span className="text-emerald-500">PRO</span>
               </div>
-              <p className="text-slate-500 max-w-xs leading-relaxed">
-                Baixe miniaturas de alta qualidade do YouTube e Rumble. Uma ferramenta essencial para editores e designers.
-              </p>
+              <p className="text-slate-500 max-w-xs leading-relaxed">{currentT.footer_desc}</p>
             </div>
             <div className="space-y-6">
               <h4 className="text-white font-black uppercase text-xs tracking-widest">Legal</h4>
               <ul className="space-y-4 text-slate-500 text-sm">
-                <li><button onClick={() => setCurrentView('privacy')} className="hover:text-emerald-400 transition-colors">Política de Privacidade</button></li>
-                <li><button onClick={() => setCurrentView('terms')} className="hover:text-emerald-400 transition-colors">Termos de Serviço</button></li>
-                <li><button onClick={() => setCurrentView('home')} className="hover:text-emerald-400 transition-colors">Isenção de Responsabilidade</button></li>
+                <li><button onClick={() => setCurrentView('privacy')} className="hover:text-emerald-400 transition-colors">{currentT.nav_privacy}</button></li>
+                <li><button onClick={() => setCurrentView('terms')} className="hover:text-emerald-400 transition-colors">{currentT.nav_terms}</button></li>
               </ul>
             </div>
             <div className="space-y-6">
-              <h4 className="text-white font-black uppercase text-xs tracking-widest">Links Rápidos</h4>
+              <h4 className="text-white font-black uppercase text-xs tracking-widest">Links</h4>
               <ul className="space-y-4 text-slate-500 text-sm">
-                <li><button onClick={() => setCurrentView('home')} className="hover:text-emerald-400 transition-colors">Home</button></li>
-                <li><button onClick={() => setCurrentView('about')} className="hover:text-emerald-400 transition-colors">Sobre Nós</button></li>
-                <li><button onClick={() => setCurrentView('contact')} className="hover:text-emerald-400 transition-colors">Contato</button></li>
+                <li><button onClick={() => setCurrentView('home')} className="hover:text-emerald-400 transition-colors">{currentT.nav_home}</button></li>
+                <li><button onClick={() => setCurrentView('about')} className="hover:text-emerald-400 transition-colors">{currentT.nav_about}</button></li>
               </ul>
             </div>
           </div>
-          <div className="pt-10 border-t border-white/5 flex flex-col md:row items-center justify-between gap-6 text-[11px] font-bold text-slate-600 uppercase tracking-widest">
-            <p>© 2024 ThumbPro - Todos os direitos reservados.</p>
-            <div className="flex items-center gap-8">
-              <span>Feito com ❤️ por Criadores</span>
+          <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 text-[11px] font-bold text-slate-600 uppercase tracking-widest">
+            <p>© 2024 ThumbPro - Worldwide Edition</p>
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> GLOBAL SERVER</span>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* COOKIE BANNER - CONFORMIDADE GDPR/LGPD */}
       {showCookieBanner && (
         <div className="fixed bottom-0 left-0 right-0 z-[100] p-4 animate-in slide-in-from-bottom-full duration-700">
           <div className="max-w-4xl mx-auto glass-morphism border border-emerald-500/20 p-6 md:p-8 rounded-[32px] shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
@@ -434,14 +505,14 @@ const App: React.FC = () => {
                 <Shield size={24} />
               </div>
               <p className="text-slate-300 text-sm leading-relaxed">
-                Nós usamos cookies para melhorar sua experiência e oferecer anúncios personalizados. Ao continuar navegando, você concorda com nossa <button onClick={() => setCurrentView('privacy')} className="text-emerald-400 font-bold underline">Política de Privacidade</button>.
+                {currentT.cookie_text} <button onClick={() => setCurrentView('privacy')} className="text-emerald-400 font-bold underline">{currentT.nav_privacy}</button>.
               </p>
             </div>
             <button 
               onClick={acceptCookies}
               className="px-10 py-4 bg-emerald-500 text-black font-black uppercase text-xs rounded-2xl hover:bg-emerald-400 transition-colors whitespace-nowrap shadow-[0_8px_20px_rgba(16,185,129,0.3)]"
             >
-              Aceitar Cookies
+              {currentT.cookie_btn}
             </button>
           </div>
         </div>
